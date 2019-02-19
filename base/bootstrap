@@ -29,14 +29,6 @@ function _denv-runner() {
     done
   fi
 
-  echo "docker run --rm \
-    -u $(id -u):$(id -g) \
-    -v ${PWD}:/workspace \
-    ${DENV_EXTRA_OPTS} \
-    ${additional_envs_args} \
-    ${env_file_args} \
-    nodeintegration/${DENV_IMAGE}:${DENV_IMAGE_TAG} \
-    ${@}"
   docker run --rm \
     -u $(id -u):$(id -g) \
     -v ${PWD}:/workspace \

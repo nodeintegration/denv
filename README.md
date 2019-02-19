@@ -1,31 +1,23 @@
-# Just a handy docker image that contains the suite of hashicorp products
+# denv (docker environment)
 
 ## How it works?
-This image gives you a nice wrapper to run any hashicorp product inside a container as if it was a local binary
+These images give you a nice wrapper to run arbitrary commands as well as all of the nodeintegration/denv-\* image commands inside a container as if it was a local binary
 ```
-$ source /dev/stdin <<< "$(docker run nodeintegration/hashicorp-tools:latest boot)"
+$ source /dev/stdin <<< "$(docker run nodeintegration/denv:latest boot)"
 Binding to tag: latest
 ```
 What this command does is give you a bunch of bash functions:
 ```
-$ type terraform
-terraform is a function
-terraform ()
+$ type _denv-runner
+_denv-runner is a function
+_denv-runner ()
 {
-    hashicorp-helper terraform ${@}
-}
-
-$ type hashicorp-helper
-hashicorp-helper is a function
-hashicorp-helper ()
-{
-    export HASHICORP_HELPER_TAG=${HASHICORP_HELPER_TAG:-$HASHICORP_HELPER_LAUNCH_TAG};
-    export HASHICORP_HELPER_INTERACTIVE=${HASHICORP_HELPER_INTERACTIVE:-true};
-    local HASHICORP_HELPER_EXTRA_OPTS='';
-    if [ "${HASHICORP_HELPER_INTERACTIVE}" == 'true' ]; then
-        HASHICORP_HELPER_EXTRA_OPTS+=' -it';
+    DENV_INTERACTIVE=${DENV_INTERACTIVE:-true};
+    DENV_EXTRA_OPTS='';
+    if [ "${DENV_INTERACTIVE}" == 'true' ]; then
+        DENV_EXTRA_OPTS+=' -it';
     fi;
-    local env_file='.env.hashicorp';
+    local env_file='.env.denv';
     local env_file_args='';
     local additional_envs_args='';
     if [ -f "${env_file}" ]; then
@@ -41,7 +33,26 @@ hashicorp-helper ()
             fi;
         done;
     fi;
-    docker run --rm -u $(id -u):$(id -g) -v ${PWD}:/workspace ${HASHICORP_HELPER_EXTRA_OPTS} ${additional_envs_args} ${env_file_args} nodeintegration/hashicorp-tools:${HASHICORP_HELPER_TAG} ${@}
+    docker run --rm -u $(id -u):$(id -g) -v ${PWD}:/workspace ${DENV_EXTRA_OPTS} ${additional_envs_args} ${env_file_args} nodeintegration/${DENV_IMAGE}:${DENV_IMAGE_TAG} ${@}
+}
+
+$ type denv
+denv is a function
+denv ()
+{
+    DENV_IMAGE=denv;
+    DENV_IMAGE_TAG=${DENV_IMAGE_TAG:-${DENV_TAG}};
+    _denv-runner ${@}
+}
+
+$ type terraform
+terraform is a function
+terraform ()
+{
+    DENV_IMAGE=denv-terraform;
+    TERRAFORM_VERSION=${TERRAFORM_VERSION:-latest};
+    DENV_IMAGE_TAG=${TERRAFORM_VERSION};
+    _denv-runner terraform ${@}
 }
 ```
 What this essentially does is create wrappers for each tool which then will perform a docker run command with the correct invocation for your needs
@@ -61,14 +72,8 @@ One thing to note is that it mounts your current directory into /workspace which
 
 ## Configuration
 The boot script function takes a couple of things into account:
-  * HASHICORP_HELPER_TAG - This environment variable if present in your shell will select what image tag to use for hashicorp-tools, if it is not specified it falls back to what ever you sourced the boot command from
-  * HASHICORP_HELPER_INTERACTIVE - This environment variable if set to 'true' will make the resulting docker run contain an interactive terminal (-it) in the resulting docker run command
-  * .env.hashicorp - If this file exists in your current working directory the function will load any environment variables you have in there (simple VAR=VALUE) if you want to make sure the value is loaded from your current shell you would just put: `VAR=`
+  * DENV_TAG - This environment variable if present in your shell will select what image tag to use for denv, if it is not specified it falls back to what ever you sourced the boot command from
+  * DENV_INTERACTIVE - This environment variable by default is 'true' which will make the resulting docker run contain an interactive terminal (-it) in the resulting docker run command, setting this to anything other than true will result in it not being an interactive terminal (ie you may want this in a ci/cd environment)
+  * .env.dev - If this file exists in your current working directory the function will load any environment variables you have in there (simple VAR=VALUE) if you want to make sure the value is loaded from your current shell you would just put: `VAR=`
 
-## Tools supplied
-### Packer 1.3.4
-### Vagrant 2.2.3
-### Terraform 0.11.11
-### Consul 1.4.2
-### Vault 1.0.3
-### Nomad 0.8.7
+## available tools for denv can be looked up via https://dockerhub.com/r/nodeintegration/ denv-\*
