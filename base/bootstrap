@@ -1,6 +1,6 @@
-function denv() {
-  export DENV_INTERACTIVE=${DENV_INTERACTIVE:-true}
-  local DENV_EXTRA_OPTS=''
+function _denv-runner() {
+  DENV_INTERACTIVE=${DENV_INTERACTIVE:-true}
+  DENV_EXTRA_OPTS=''
 
   if [ "${DENV_INTERACTIVE}" == 'true' ]; then
     DENV_EXTRA_OPTS+=' -it'
@@ -29,12 +29,33 @@ function denv() {
     done
   fi
 
+  echo "docker run --rm \
+    -u $(id -u):$(id -g) \
+    -v ${PWD}:/workspace \
+    ${DENV_EXTRA_OPTS} \
+    ${additional_envs_args} \
+    ${env_file_args} \
+    nodeintegration/${DENV_IMAGE}:${DENV_IMAGE_TAG} \
+    ${@}"
   docker run --rm \
     -u $(id -u):$(id -g) \
     -v ${PWD}:/workspace \
     ${DENV_EXTRA_OPTS} \
     ${additional_envs_args} \
     ${env_file_args} \
-    nodeintegration/denv:${DENV_TAG} \
+    nodeintegration/${DENV_IMAGE}:${DENV_IMAGE_TAG} \
     ${@}
+}
+
+function denv() {
+  DENV_IMAGE=denv
+  DENV_IMAGE_TAG=${DENV_IMAGE_TAG:-${DENV_TAG}}
+  _denv-runner ${@}
+}
+
+function terraform() {
+  DENV_IMAGE=denv-terraform
+  TERRAFORM_VERSION=${TERRAFORM_VERSION:-latest}
+  DENV_IMAGE_TAG=${TERRAFORM_VERSION}
+  _denv-runner terraform ${@}
 }
