@@ -34,7 +34,7 @@ Kernel \r on an \m (\l)
 
 ## .denv.yml
 
-###Commands run as different docker images/tags
+### Commands run as different docker images/tags
 This is where it gets fun.
 The function `denv` looks for a file .denv.yml in your current working directory
 It then looks for a key: `commands:`
