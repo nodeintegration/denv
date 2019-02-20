@@ -1,17 +1,30 @@
-
 function denv() {
+  DENV_TAG=${DENV_TAG:-latest}
   local DENV_IMAGE=nodeintegration/denv
   local DENV_IMAGE_TAG=${DENV_IMAGE_TAG:-${DENV_TAG}}
   local additional_envs_args=''
+
+  if [ -z "${1}" ]; then
+    echo "[ERROR]: you must supply at least a command argument to denv!"
+    return 1
+  fi
+
   if [ -f .denv.yml ]; then
+    local YQ=$(which yq)
+
+    if [ -z "${YQ}" ]; then
+      echo "#[DEBUG]: no local yq detected, determining config in denv container"
+      YQ="docker run --rm -v ${PWD}:/workspace ${DENV_IMAGE}:${DENV_TAG} yq"
+    fi
+
     # Process global environment variables
-    local global_envs=$(yq -r ".global.environment | keys[] // empty" .denv.yml)
+    local global_envs=$(${YQ} -r ".global.environment | keys[] // empty" .denv.yml)
     #echo "#[DEBUG]: ${global_envs}"
     for e in ${global_envs}; do
       if [ ! -z ${!e+x} ]; then
         additional_envs_args+=" -e ${e}"
       else
-        local v=$(yq -r ".global.environment.${e} // empty" .denv.yml)
+        local v=$(${YQ} -r ".global.environment.${e} // empty" .denv.yml)
         if [ -n "${v+set}" ] ; then
           additional_envs_args+=" -e ${e}=\"${v}\""
         fi
@@ -19,11 +32,11 @@ function denv() {
     done
 
     # Process command config
-    local cmd_config=$(yq -r ".commands.${1} // empty" .denv.yml)
+    local cmd_config=$(${YQ} -r ".commands.${1} // empty" .denv.yml)
     if [ -n "${cmd_config}" ]; then
-      local image=$(yq -r ".commands.${1}.image // empty" .denv.yml)
+      local image=$(${YQ} -r ".commands.${1}.image // empty" .denv.yml)
       DENV_IMAGE=${image:-$1}
-      local tag=$(yq -r ".commands.${1}.tag // empty" .denv.yml)
+      local tag=$(${YQ} -r ".commands.${1}.tag // empty" .denv.yml)
       DENV_IMAGE_TAG=${tag:-latest}
       #echo "#[DEBUG]: executing: ${1} from ${DENV_IMAGE} at tag: ${DENV_IMAGE_TAG}"
     fi

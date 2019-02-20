@@ -1,5 +1,10 @@
 # denv (docker environment)
 
+## Requirements
+  - Docker installed and running with your intended user in the docker group (ie you can run docker commands as your intended user)
+## Requirements (optional)
+  - yq (python yq, basically jq for yaml) If this is not installed in the current path, it will process .denv.yml config using yq within the denv container
+
 ## How it works?
 These images give you a nice wrapper to run arbitrary commands as well as all of the nodeintegration/denv-\* image commands inside a container as if it was a local binary
 ```
@@ -8,42 +13,13 @@ Binding to tag: latest
 ```
 What this command does is give a denv function in bash:
 ```
-$ type denv
+$ type denv| grep function
 denv is a function
-denv ()
-{
-    local DENV_IMAGE=nodeintegration/denv;
-    local DENV_IMAGE_TAG=${DENV_IMAGE_TAG:-${DENV_TAG}};
-    local additional_envs_args='';
-    if [ -f .denv.yml ]; then
-        local global_envs=$(yq -r ".global.environment | keys[] // empty" .denv.yml);
-        for e in ${global_envs};
-        do
-            if [ ! -z ${!e+x} ]; then
-                additional_envs_args+=" -e ${e}";
-            else
-                local v=$(yq -r ".global.environment.${e} // empty" .denv.yml);
-                if [ -n "${v+set}" ]; then
-                    additional_envs_args+=" -e ${e}=\"${v}\"";
-                fi;
-            fi;
-        done;
-        local cmd_config=$(yq -r ".commands.${1} // empty" .denv.yml);
-        if [ -n "${cmd_config}" ]; then
-            local image=$(yq -r ".commands.${1}.image // empty" .denv.yml);
-            DENV_IMAGE=${image:-$1};
-            local tag=$(yq -r ".commands.${1}.tag // empty" .denv.yml);
-            DENV_IMAGE_TAG=${tag:-latest};
-        fi;
-    fi;
-    DENV_INTERACTIVE=${DENV_INTERACTIVE:-true};
-    DENV_EXTRA_OPTS='';
-    if [ "${DENV_INTERACTIVE}" == 'true' ]; then
-        DENV_EXTRA_OPTS+=' -it';
-    fi;
-    docker run --rm -u $(id -u):$(id -g) -v ${PWD}:/workspace ${DENV_EXTRA_OPTS} ${additional_envs_args} ${env_file_args} ${DENV_IMAGE}:${DENV_IMAGE_TAG} ${@}
-}
-
+```
+If you are curious what this is exactly doing before you load it into your shell:
+```
+$ docker run nodeintegration/denv:latest cat /usr/local/bin/boot
+$ docker run nodeintegration/denv:latest cat /workspace/bootstrap
 ```
 What this `denv` function does is create a wrapper to run the first argument to denv as a container.
 By default the command will run inside the denv container with your current working directory mounted to /workspace. It is also run as your current uid/gid
