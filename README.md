@@ -33,6 +33,8 @@ Kernel \r on an \m (\l)
 ```
 
 ## .denv.yml
+This configuration file for denv allows you to commit specific versions of commands you use within a repository perhaps or on your CI/CD system at the commit level
+It is evaulated per command
 
 ### Commands run as different docker images/tags
 This is where it gets fun.
@@ -83,3 +85,8 @@ $ FOO="bar" denv env | grep -E '^(FOO|BAR)'
 BAR="baz"
 FOO=bar
 ```
+## NOTES
+
+denv does not *currently* enforce freshness of docker images
+e.g if you have in your .denv.yml to run a command say `bash` as tag `latest` it will use the image that is cached on your docker host, it does not always do a pull on the intended image/tag
+
