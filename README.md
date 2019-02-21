@@ -15,6 +15,8 @@ What this command does is give a denv function in bash:
 ```
 $ type denv| grep function
 denv is a function
+$ type denv| grep function
+denv-init is a function
 ```
 If you are curious what this is exactly doing before you load it into your shell:
 ```
@@ -85,8 +87,9 @@ $ FOO="bar" denv env | grep -E '^(FOO|BAR)'
 BAR="baz"
 FOO=bar
 ```
-## NOTES
 
-denv does not *currently* enforce freshness of docker images
-e.g if you have in your .denv.yml to run a command say `bash` as tag `latest` it will use the image that is cached on your docker host, it does not always do a pull on the intended image/tag
+### I want to make sure i have all expected images for commands at the current upstream tag
 
+`denv-init`
+
+This will scour your .denv.yml for all commands and what images/tags they want and do a docker pull on them

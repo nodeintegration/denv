@@ -58,3 +58,27 @@ function denv() {
     ${DENV_IMAGE}:${DENV_IMAGE_TAG} \
     ${@}
 }
+
+function denv-pull() {
+  if [ -f .denv.yml ]; then
+    local YQ=$(which yq)
+    local DENV_TAG=${DENV_TAG:-latest}
+    local DENV_IMAGE=nodeintegration/denv
+
+    if [ -z "${YQ}" ]; then
+      echo "#[DEBUG]: no local yq detected, determining config in denv container"
+      YQ="docker run --rm -v ${PWD}:/workspace ${DENV_IMAGE}:${DENV_TAG} yq"
+    fi
+
+    local commands=$(${YQ} -r ".commands | keys[] // empty" .denv.yml)
+    for cmd in ${commands}; do
+      local image=$(${YQ} -r ".commands.${cmd}.image // empty" .denv.yml)
+      image=${image:-$cmd}
+      local tag=$(${YQ} -r ".commands.${cmd}.tag // empty" .denv.yml)
+      echo "#[INFO]: processing command: ${cmd} image: ${image} tag: ${tag}"
+      docker pull ${image}:${tag}
+    done
+  else
+    echo "#[INFO]: no .denv.yml detected. nothing to do."
+  fi
+}
