@@ -38,6 +38,28 @@ Kernel \r on an \m (\l)
 This configuration file for denv allows you to commit specific versions of commands you use within a repository perhaps or on your CI/CD system at the commit level
 It is evaulated per command
 
+### global.environment
+A list of key = value environment variables that will be passed to the container per command run
+This can be an empty value.
+denv WILL use the presence of a shell environment value over the value provided from .denv.yml
+Think of the value in .denv.yml as a default with the shell overriding it.
+### ${cmd}.image
+The docker image to use for this command. eg: `terraform.image: hashicorp/terraform`
+If this is not present it will default to the value of ${cmd}
+### ${cmd}.tag
+The docker image tag to use for this command. eg: `terraform.tag: 0.11.0`
+The default value if not present is `latest`
+### ${cmd}.cmd
+If this is present it will strip the running command and replace it with this value.
+a use case of why you might want this is like so:
+```
+python-3.6.8.cmd: python
+python-3.7.2.cmd: python
+```
+So it will always execute `python` as python-3.6.8
+useful if you are performing matrices etc
+
+
 ### Commands run as different docker images/tags
 This is where it gets fun.
 The function `denv` looks for a file .denv.yml in your current working directory
